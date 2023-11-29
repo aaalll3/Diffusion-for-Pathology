@@ -62,8 +62,9 @@ class Info:
                 print('adding a list of file')
             for name in names:
                 if self.pattern.search(name):
+                    _id = name.split('_')[0]
                     self.n_iidx[name]=len(self.names)
-                    self.i_iidx[name]=len(self.names)
+                    self.i_iidx[_id]=len(self.names)
                     self.names.append(name)
                     self.ids.append(name.split('_')[0])
                 else:
@@ -72,8 +73,9 @@ class Info:
             if self.debug:
                 print('adding one file')
             if self.pattern.search(names):
+                _id = names.split('_')[0]
                 self.n_iidx[names]=len(self.names)
-                self.i_iidx[names]=len(self.names)
+                self.i_iidx[_id]=len(self.names)
                 self.names.append(names)
                 self.ids.append(names.split('_')[0])
             else:
@@ -83,7 +85,10 @@ class Info:
 
     def get_id(self,name):
         if type(name) is str:
-            return self.ids[self.n_iidx[name]]
+            if self.ext_pattern.search(name):
+                return self.ids[self.n_iidx[name]]
+            else:
+                return name
         elif type(name) is int:
             return self.ids[name]
         else:
@@ -95,12 +100,17 @@ class Info:
                 return self.n_iidx[name]
             else:
                 return self.i_iidx[name]
+        elif type(name) is int:
+            return name
         else:
             print(f'Info.get_idx:miss type >{name}')
         
     def get_name(self,idx):
         if type(idx) is str:
-            return self.names[self.i_iidx[name]]
+            if self.ext_pattern.search(idx):
+                return idx
+            else:
+                return self.names[self.i_iidx[idx]]
         elif type(idx) is int:
             return self.names[idx]
         else:
@@ -137,6 +147,15 @@ class Prepare:
         self.infos.add(self.sample_names)
         self.set = set()
         self.debug = False
+        print(f'prepared {len(self.sample_names)}origin image')
+    
+    def clear(self, rm = False):
+        star = os.path.join(dst_dir,'*')
+        print('clearing dst dir')
+        os.system(f'ls {dst_dir}')
+        if rm or input('Are you shure to remore?(Y/N)')=='Y':
+            os.system(f'rm {star}')
+            
     
     def config(self):
         pass
@@ -168,9 +187,8 @@ class Prepare:
             yrand = random.randint(0,ymax-shape[1])
             if self.set is not None and not (xrand,yrand) in self.set:
                 self.set.add((xrand,yrand))
-                print('add')
                 break
-        dst_path = os.path.join(dst_dir,f'{shape[0]}x{shape[1]}',f'{self.get_id(_id)}_({xrand}_{yrand}).{ext}')
+        dst_path = os.path.join(dst_dir,f'{shape[0]}x{shape[1]}',f"{self.get_id(_id)}_{xrand}-{yrand}.{ext}")
         # print(im.shape)
         if len(im_shape) == 2:
             im = im[xrand:xrand+shape[0],yrand:yrand+shape[1]]
@@ -186,12 +204,16 @@ class Prepare:
     def cut_m(self,_id,shape=(128,128),number=1,save=False,ext='png'):
         self.set.clear()
         cropped=[]
-        for ii in number:
+        for ii in range(number):
+            if ii % 10 == 1:
+                print(f'<{ii+1}/{number}>cropping')
             cropped.append(self.cut_one(_id,shape,save,ext))
         return cropped
     
     def cut_all(self,shape=(128,128),number=1,save=False,ext='png'):
-        for _id in self.infos.ids:
+        self.clear(rm = True)
+        for idx,_id in enumerate(self.infos.ids):
+            print(f'[{idx+1}/{len(self.sample_names)}]cropping {self.get_name(_id)} to {shape}')
             self.cut_m(_id,shape,number,save,ext)
 
 # TODO
