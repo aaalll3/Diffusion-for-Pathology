@@ -2,6 +2,9 @@ __portable/
 playground.py
 environment.yml
 tmp.txt
+generated/
+pretrained/
+*.out
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
